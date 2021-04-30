@@ -17,7 +17,7 @@
 #define USE_KALMAN_FILTER false
 //----------------------------------------------------------
 /*DEFINITION*/
-#define RAD2DEG(X)      X / M_PI * 180.0
+#define RAD2DEG(X) X / M_PI * 180.0
 typedef struct
 {
   double prev_gps[3];
@@ -29,7 +29,7 @@ typedef struct
   double prev_right_enc;
   double right_enc;
 } measurement_t;
-typedef struct 
+typedef struct
 {
   double x;
   double y;
@@ -53,8 +53,8 @@ double last_gps_time = 0.0f;
 /*FUNCTIONS*/
 void init_devices(int ts);
 static void controller_get_pose();
-//static void controller_get_acc();
-//static void controller_get_encoder();
+static void controller_get_acc();
+static void controller_get_encoder();
 static double controller_get_heading();
 
 //----------------------------------------------------------
@@ -70,9 +70,9 @@ int main()
     // 1. Perception / Measurement
     controller_get_pose();
 
-    //controller_get_acc();
+    controller_get_acc();
 
-    //controller_get_encoder();
+    controller_get_encoder();
 
     // Use one of the two trajectories.
     trajectory_1(dev_left_motor, dev_right_motor);
@@ -115,6 +115,30 @@ void controller_get_gps()
   printf("ROBOT gps is at position: %g %g %g\n", _meas.gps[0], _meas.gps[1], _meas.gps[2]);
 }
 
+void controller_get_encoder()
+{
+  // Store previous value of the left encoder
+  _meas.prev_left_enc = _meas.left_enc;
+
+  _meas.left_enc = wb_position_sensor_get_value(dev_left_encoder);
+
+  // Store previous value of the right encoder
+  _meas.prev_right_enc = _meas.right_enc;
+
+  _meas.right_enc = wb_position_sensor_get_value(dev_right_encoder);
+
+  printf("ROBOT enc : %g %g\n", _meas.left_enc, _meas.right_enc);
+}
+
+void controller_get_acc()
+{
+  const double *acc_values = wb_accelerometer_get_values(dev_acc);
+
+  memcpy(_meas.acc, acc_values, sizeof(_meas.acc));
+
+  printf("ROBOT acc : %g %g %g\n", _meas.acc[0], _meas.acc[1], _meas.acc[2]);
+}
+
 void controller_get_pose()
 {
   // Call the function to get the gps measurements
@@ -131,7 +155,7 @@ void controller_get_pose()
 
     _pose.heading = controller_get_heading() + _pose_origin.heading;
 
-     printf("ROBOT pose : %g %g %g\n", _pose.x, _pose.y, RAD2DEG(_pose.heading));
+    printf("ROBOT pose : %g %g %g\n", _pose.x, _pose.y, RAD2DEG(_pose.heading));
   }
 }
 
