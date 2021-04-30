@@ -8,6 +8,7 @@
 #include <webots/position_sensor.h>
 
 #include "trajectories.h"
+#include "odometry.h"
 
 //----------------------------------------------------------
 /* FLAGS_ENABLE_DIFFERENT LOCALIZATION_METHOD*/
@@ -17,7 +18,6 @@
 #define USE_KALMAN_FILTER false
 //----------------------------------------------------------
 /*DEFINITION*/
-#define RAD2DEG(X) X / M_PI * 180.0
 typedef struct
 {
   double prev_gps[3];
@@ -29,12 +29,6 @@ typedef struct
   double prev_right_enc;
   double right_enc;
 } measurement_t;
-typedef struct
-{
-  double x;
-  double y;
-  double heading;
-} pose_t;
 //-----------------------------------------------------------
 /* VARIABLES */
 WbDeviceTag dev_gps;
@@ -74,6 +68,19 @@ int main()
 
     controller_get_encoder();
 
+    if (USE_GPS_ONLY)
+    {
+    }
+    if (USE_ENCODER_ONLY)
+    {
+    }
+    if (USE_ACCELEROMETER_ENCODER)
+    {
+    }
+    if (USE_KALMAN_FILTER)
+    {
+    }
+
     // Use one of the two trajectories.
     trajectory_1(dev_left_motor, dev_right_motor);
     //    trajectory_2(dev_left_motor, dev_right_motor);
@@ -81,7 +88,11 @@ int main()
 }
 
 //-----------------------------------------------------------
+void controller_init()
+{
 
+  init_devices();
+}
 void init_devices(int ts)
 {
   dev_gps = wb_robot_get_device("gps");
