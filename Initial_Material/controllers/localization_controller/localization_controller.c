@@ -18,6 +18,7 @@
 #define USE_KALMAN_FILTER false
 //----------------------------------------------------------
 /*DEFINITION*/
+#define TIME_INIT_ACC 5 // Time in second
 typedef struct
 {
   double prev_gps[3];
@@ -39,25 +40,27 @@ WbDeviceTag dev_left_motor;
 WbDeviceTag dev_right_motor;
 
 static measurement_t _meas;
-static pose_t _pose, _odo_acc, _odo_enc;
-static pose_t _pose_origin = {-0.4, 0.4, 0.0};
+static pose_t _estimated_pose, _pose_gps, _odo_acc_encoder, _odo_enc;
+static pose_t _pose_origin = {-2.9, 0.0, 0.0};
 double last_gps_time = 0.0f;
-
+int time_step;
 //----------------------------------------------------------
 /*FUNCTIONS*/
-void init_devices(int ts);
+static void controller_init(int ts);
+static void init_devices(int ts);
 static void controller_get_pose();
-static void controller_get_acc();
+static void controller_get_acc_encoder();
 static void controller_get_encoder();
 static double controller_get_heading();
+static void controller_compute_mean_acc();
 
 //----------------------------------------------------------
 /*MAIN FUNCTION*/
 int main()
 {
   wb_robot_init();
-  int time_step = wb_robot_get_basic_time_step();
-  init_devices(time_step);
+  time_step = wb_robot_get_basic_time_step();
+  controller_init(time_step);
 
   while (wb_robot_step(time_step) != -1)
   {
@@ -68,14 +71,31 @@ int main()
 
     controller_get_encoder();
 
+    if (wb_robot_get_time() < TIME_INIT_ACC)
+    {
+      controller_compute_mean_acc();
+    }
+    else
+    {
+      // 2. Localization
+      odo_compute_encoders(&_odo_enc, _meas.left_enc - _meas.prev_left_enc, _meas.right_enc - _meas.prev_right_enc);
+
+      odo_compute_acc_encoders(&_odo_acc_encoder, _meas.acc, _meas.acc_mean, _meas.left_enc - _meas.prev_left_enc, _meas.right_enc - _meas.prev_right_enc);
+    }
+
     if (USE_GPS_ONLY)
     {
+      memcpy(_estimated_pose, &_pose_gps, sizeof(pose_t));
     }
     if (USE_ENCODER_ONLY)
     {
+      odo_compute_acc_encoders(&_odo_acc_encoder, _meas.acc, _meas.acc_mean, _meas.left_enc - _meas.prev_left_enc, _meas.right_enc - _meas.prev_right_enc);
+      memcpy(_estimated_pose, &_odo_acc_encoder, sizeof(pose_t));
     }
     if (USE_ACCELEROMETER_ENCODER)
     {
+      odo_compute_encoders(&_odo_enc, _meas.left_enc - _meas.prev_left_enc, _meas.right_enc - _meas.prev_right_enc);
+      memcpy(_estimated_pose, &odo_compute_enc, sizeof(pose_t));
     }
     if (USE_KALMAN_FILTER)
     {
@@ -88,10 +108,19 @@ int main()
 }
 
 //-----------------------------------------------------------
-void controller_init()
+void controller_init(time_step)
 {
+  init_devices(time_step);
 
-  init_devices();
+  memset(&_meas, 0, sizeof(measurement_t));
+
+  memset(&_pose, 0, sizeof(pose_t));
+
+  memset(&_odo_enc, 0, sizeof(pose_t));
+
+  memset(&_odo_acc_encoder, 0, sizeof(pose_t));
+
+  odo_reset(time_step);
 }
 void init_devices(int ts)
 {
@@ -105,8 +134,9 @@ void init_devices(int ts)
   dev_right_encoder = wb_robot_get_device("right wheel sensor");
   wb_position_sensor_enable(dev_left_encoder, ts);
   wb_position_sensor_enable(dev_right_encoder, ts);
+  `
 
-  dev_left_motor = wb_robot_get_device("left wheel motor");
+      dev_left_motor = wb_robot_get_device("left wheel motor");
   dev_right_motor = wb_robot_get_device("right wheel motor");
   wb_motor_set_position(dev_left_motor, INFINITY);
   wb_motor_set_position(dev_right_motor, INFINITY);
@@ -123,7 +153,7 @@ void controller_get_gps()
   // To Do : Copy the gps_position into the measurment structure (use memcpy)
   memcpy(_meas.gps, gps_position, sizeof(_meas.gps));
 
-  printf("ROBOT gps is at position: %g %g %g\n", _meas.gps[0], _meas.gps[1], _meas.gps[2]);
+  //printf("ROBOT gps is at position: %g %g %g\n", _meas.gps[0], _meas.gps[1], _meas.gps[2]);
 }
 
 void controller_get_encoder()
@@ -138,7 +168,7 @@ void controller_get_encoder()
 
   _meas.right_enc = wb_position_sensor_get_value(dev_right_encoder);
 
-  printf("ROBOT enc : %g %g\n", _meas.left_enc, _meas.right_enc);
+  //printf("ROBOT enc : %g %g\n", _meas.left_enc, _meas.right_enc);
 }
 
 void controller_get_acc()
@@ -147,7 +177,7 @@ void controller_get_acc()
 
   memcpy(_meas.acc, acc_values, sizeof(_meas.acc));
 
-  printf("ROBOT acc : %g %g %g\n", _meas.acc[0], _meas.acc[1], _meas.acc[2]);
+  //printf("ROBOT acc : %g %g %g\n", _meas.acc[0], _meas.acc[1], _meas.acc[2]);
 }
 
 void controller_get_pose()
@@ -160,13 +190,13 @@ void controller_get_pose()
     controller_get_gps();
 
     // To Do : Fill the structure pose_t {x, y, heading}. Use the _pose_origin.
-    _pose.x = _meas.gps[0] - _pose_origin.x;
+    _gps_pose.x = _meas.gps[0] - _pose_origin.x;
 
-    _pose.y = -(_meas.gps[2] - _pose_origin.y);
+    _gps_pose.y = -(_meas.gps[2] - _pose_origin.y);
 
-    _pose.heading = controller_get_heading() + _pose_origin.heading;
+    _gps_pose.heading = controller_get_heading() + _pose_origin.heading;
 
-    printf("ROBOT pose : %g %g %g\n", _pose.x, _pose.y, RAD2DEG(_pose.heading));
+    printf("ROBOT pose : %g %g %g\n", _gps_pose.x, _gps_pose.y, RAD2DEG(_gps_pose.heading));
   }
 }
 
@@ -182,4 +212,21 @@ double controller_get_heading()
   double heading = atan2(delta_y, delta_x);
 
   return heading;
+}
+void controller_compute_mean_acc()
+{
+  static int count = 0;
+
+  count++;
+
+  if (count > 20) // Remove the effects of strong acceleration at the begining
+  {
+    for (int i = 0; i < 3; i++)
+      _meas.acc_mean[i] = (_meas.acc_mean[i] * (count - 21) + _meas.acc[i]) / (double)(count - 20);
+  }
+
+  if (count == (int)(TIME_INIT_ACC / (double)time_step * 1000))
+    printf("Accelerometer initialization Done ! \n");
+
+  //printf("ROBOT acc mean : %g %g %g\n", _meas.acc_mean[0], _meas.acc_mean[1], _meas.acc_mean[2]);
 }
