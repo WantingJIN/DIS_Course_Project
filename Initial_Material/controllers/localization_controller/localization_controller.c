@@ -40,7 +40,7 @@ WbDeviceTag dev_left_motor;
 WbDeviceTag dev_right_motor;
 
 static measurement_t _meas;
-static pose_t _estimated_pose, _pose_gps, _odo_acc_encoder, _odo_enc;
+static pose_t _estimated_pose, _gps_pose, _odo_acc_encoder, _odo_enc;
 static pose_t _pose_origin = {-2.9, 0.0, 0.0};
 double last_gps_time = 0.0f;
 int time_step;
@@ -49,7 +49,7 @@ int time_step;
 static void controller_init(int ts);
 static void init_devices(int ts);
 static void controller_get_pose();
-static void controller_get_acc_encoder();
+static void controller_get_acc();
 static void controller_get_encoder();
 static double controller_get_heading();
 static void controller_compute_mean_acc();
@@ -77,28 +77,23 @@ int main()
     }
     else
     {
-      // 2. Localization
-      odo_compute_encoders(&_odo_enc, _meas.left_enc - _meas.prev_left_enc, _meas.right_enc - _meas.prev_right_enc);
-
-      odo_compute_acc_encoders(&_odo_acc_encoder, _meas.acc, _meas.acc_mean, _meas.left_enc - _meas.prev_left_enc, _meas.right_enc - _meas.prev_right_enc);
-    }
-
-    if (USE_GPS_ONLY)
-    {
-      memcpy(_estimated_pose, &_pose_gps, sizeof(pose_t));
-    }
-    if (USE_ENCODER_ONLY)
-    {
-      odo_compute_acc_encoders(&_odo_acc_encoder, _meas.acc, _meas.acc_mean, _meas.left_enc - _meas.prev_left_enc, _meas.right_enc - _meas.prev_right_enc);
-      memcpy(_estimated_pose, &_odo_acc_encoder, sizeof(pose_t));
-    }
-    if (USE_ACCELEROMETER_ENCODER)
-    {
-      odo_compute_encoders(&_odo_enc, _meas.left_enc - _meas.prev_left_enc, _meas.right_enc - _meas.prev_right_enc);
-      memcpy(_estimated_pose, &odo_compute_enc, sizeof(pose_t));
-    }
-    if (USE_KALMAN_FILTER)
-    {
+      if (USE_GPS_ONLY)
+      {
+        //memcpy(_estimated_pose, &_pose_gps, sizeof(pose_t));
+      }
+      if (USE_ACCELEROMETER_ENCODER)
+      {
+        odo_compute_acc_encoders(&_odo_acc_encoder, _meas.acc, _meas.acc_mean, _meas.left_enc - _meas.prev_left_enc, _meas.right_enc - _meas.prev_right_enc);
+        //memcpy(_estimated_pose, &_odo_acc_encoder, sizeof(pose_t));
+      }
+      if (USE_ENCODER_ONLY)
+      {
+        odo_compute_encoders(&_odo_enc, _meas.left_enc - _meas.prev_left_enc, _meas.right_enc - _meas.prev_right_enc);
+        //memcpy(_estimated_pose, &odo_compute_enc, sizeof(pose_t));
+      }
+      if (USE_KALMAN_FILTER)
+      {
+      }
     }
 
     // Use one of the two trajectories.
@@ -114,7 +109,9 @@ void controller_init(time_step)
 
   memset(&_meas, 0, sizeof(measurement_t));
 
-  memset(&_pose, 0, sizeof(pose_t));
+  memset(&_gps_pose, 0, sizeof(pose_t));
+
+  memset(&_estimated_pose, 0, sizeof(pose_t));
 
   memset(&_odo_enc, 0, sizeof(pose_t));
 
@@ -134,9 +131,8 @@ void init_devices(int ts)
   dev_right_encoder = wb_robot_get_device("right wheel sensor");
   wb_position_sensor_enable(dev_left_encoder, ts);
   wb_position_sensor_enable(dev_right_encoder, ts);
-  `
 
-      dev_left_motor = wb_robot_get_device("left wheel motor");
+  dev_left_motor = wb_robot_get_device("left wheel motor");
   dev_right_motor = wb_robot_get_device("right wheel motor");
   wb_motor_set_position(dev_left_motor, INFINITY);
   wb_motor_set_position(dev_right_motor, INFINITY);
