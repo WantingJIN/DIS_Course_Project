@@ -94,7 +94,7 @@ void odo_compute_encoders(pose_t *odo, double Aleft_enc, double Aright_enc)
 
 	memcpy(odo, &_odo_pose_enc, sizeof(pose_t));
 
-	printf("ODO with wheel encoders : %g %g %g\n", odo->x, odo->y, RAD2DEG(odo->heading));
+	//printf("ODO with wheel encoders : %g %g %g\n", odo->x, odo->y, RAD2DEG(odo->heading));
 }
 
 /**

@@ -9,16 +9,17 @@
 
 #include "trajectories.h"
 #include "odometry.h"
-
+#include <webots/emitter.h>
 //----------------------------------------------------------
 /* FLAGS_ENABLE_DIFFERENT LOCALIZATION_METHOD*/
-#define USE_ENCODER_ONLY false
-#define USE_GPS_ONLY true
+#define USE_ENCODER_ONLY true
+#define USE_GPS_ONLY false
 #define USE_ACCELEROMETER_ENCODER false
 #define USE_KALMAN_FILTER false
 //----------------------------------------------------------
 /*DEFINITION*/
 #define TIME_INIT_ACC 5 // Time in second
+#define FLOCK_SIZE 1
 typedef struct
 {
   double prev_gps[3];
@@ -38,12 +39,16 @@ WbDeviceTag dev_left_encoder;
 WbDeviceTag dev_right_encoder;
 WbDeviceTag dev_left_motor;
 WbDeviceTag dev_right_motor;
+WbDeviceTag radio_emitter;
+//WbDeviceTag infrared_emitter；
 
 static measurement_t _meas;
 static pose_t _estimated_pose, _gps_pose, _odo_acc_encoder, _odo_enc;
 static pose_t _pose_origin = {-2.9, 0.0, 0.0};
 double last_gps_time = 0.0f;
 int time_step;
+char *robot_name;
+int robot_id_u, robot_id; // Unique and normalized (between 0 and FLOCK_SIZE-1) robot ID
 //----------------------------------------------------------
 /*FUNCTIONS*/
 static void controller_init(int ts);
@@ -58,12 +63,14 @@ static void controller_compute_mean_acc();
 /*MAIN FUNCTION*/
 int main()
 {
+  char buffer[255]; // Buffer for sending data
   wb_robot_init();
-  time_step = wb_robot_get_basic_time_step();
+  //time_step = wb_robot_get_basic_time_step();
+  time_step=64;
   controller_init(time_step);
 
-  while (wb_robot_step(time_step) != -1)
-  {
+  while (wb_robot_step(time_step) != -1){
+  
     // 1. Perception / Measurement
     controller_get_pose();
 
@@ -79,17 +86,17 @@ int main()
     {
       if (USE_GPS_ONLY)
       {
-        //memcpy(_estimated_pose, &_pose_gps, sizeof(pose_t));
+        memcpy(&_estimated_pose, &_gps_pose, sizeof(pose_t));
       }
       if (USE_ACCELEROMETER_ENCODER)
       {
         odo_compute_acc_encoders(&_odo_acc_encoder, _meas.acc, _meas.acc_mean, _meas.left_enc - _meas.prev_left_enc, _meas.right_enc - _meas.prev_right_enc);
-        //memcpy(_estimated_pose, &_odo_acc_encoder, sizeof(pose_t));
+        memcpy(&_estimated_pose, &_odo_acc_encoder, sizeof(pose_t));
       }
       if (USE_ENCODER_ONLY)
       {
         odo_compute_encoders(&_odo_enc, _meas.left_enc - _meas.prev_left_enc, _meas.right_enc - _meas.prev_right_enc);
-        //memcpy(_estimated_pose, &odo_compute_enc, sizeof(pose_t));
+        memcpy(&_estimated_pose, &_odo_enc, sizeof(pose_t));
       }
       if (USE_KALMAN_FILTER)
       {
@@ -99,6 +106,14 @@ int main()
     // Use one of the two trajectories.
     trajectory_1(dev_left_motor, dev_right_motor);
     //    trajectory_2(dev_left_motor, dev_right_motor);
+
+    // Send the estimated pose to supervisor
+
+    sprintf(buffer, "%1d#%f#%f", robot_id, _estimated_pose.x, _estimated_pose.y);
+    //sprintf(buffer, "%1d#%f#%f", 1, 1.2, 1.2);
+    printf("message sent: %s\n", buffer);
+    wb_emitter_send(radio_emitter, buffer, strlen(buffer));
+    //printf("Robot%d estimated_pose_x: %f y: %f\n", robot_id, _estimated_pose.x, _estimated_pose.y);
   }
 }
 
@@ -138,6 +153,11 @@ void init_devices(int ts)
   wb_motor_set_position(dev_right_motor, INFINITY);
   wb_motor_set_velocity(dev_left_motor, 0.0);
   wb_motor_set_velocity(dev_right_motor, 0.0);
+
+  radio_emitter = wb_robot_get_device("emitter");
+  robot_name = (char *)wb_robot_get_name();
+  sscanf(robot_name, "epuck%d", &robot_id_u); // read robot id from the robot's name
+  robot_id = robot_id_u % FLOCK_SIZE;         // normalize between 0 and FLOCK_SIZE-1
 }
 
 void controller_get_gps()
@@ -192,7 +212,7 @@ void controller_get_pose()
 
     _gps_pose.heading = controller_get_heading() + _pose_origin.heading;
 
-    printf("ROBOT pose : %g %g %g\n", _gps_pose.x, _gps_pose.y, RAD2DEG(_gps_pose.heading));
+    //printf("ROBOT pose : %g %g %g\n", _gps_pose.x, _gps_pose.y, RAD2DEG(_gps_pose.heading));
   }
 }
 
