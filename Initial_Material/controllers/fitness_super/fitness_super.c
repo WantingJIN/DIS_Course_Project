@@ -21,6 +21,7 @@ WbDeviceTag receiver;				  //Single recevier
 
 float loc[FLOCK_SIZE][3];			 // Location of everybody in the flock
 float estimated_pose[FLOCK_SIZE][2]; // Estimated position of each robot by using different localization method
+float initial_loc[FLOCK_SIZE][3];	 // Initial localization of every epucks in the flock
 
 #define RULE1_THRESHOLD 0.2
 #define fit_cluster_ref 0.03
@@ -47,7 +48,7 @@ void reset(void)
 		printf("missing receiver\n");
 
 	char rob[7] = "epuck0";
-	int i;
+	// int i;
 	// // Load robot field for flocking
 	// for (i = 0; i < FLOCK_SIZE; i++)
 	// {
@@ -63,11 +64,34 @@ void reset(void)
 	robs_rotation[0] = wb_supervisor_node_get_field(robs[0], "rotation");
 }
 /*
+ * Get the inital position of robots
+ */
+
+void get_robots_initial_position()
+{
+	int i;
+	for (i = 0; i < FLOCK_SIZE; i++)
+	{
+		initial_loc[i][0] = wb_supervisor_field_get_sf_vec3f(robs_trans[i])[0];		  // X
+		initial_loc[i][1] = wb_supervisor_field_get_sf_vec3f(robs_trans[i])[2];		  // Z
+		initial_loc[i][2] = wb_supervisor_field_get_sf_rotation(robs_rotation[i])[3]; // THETA
+	}
+	// Run one step
+	wb_robot_step(TIME_STEP);
+}
+
+/*
  * Compute localization metric
  */
 
-float compute_localization_fitness()
+void compute_localization_fitness(float *fit_loc)
 {
+	*fit_loc = 0;
+	int i;
+	for (i = 0; i < FLOCK_SIZE; i++)
+	{
+		*fit_loc += sqrt((powf(loc[i][0] - initial_loc[i][0] - estimated_pose[i][0], 2) + powf(-(loc[i][1] -initial_loc[i][1]) - estimated_pose[i][1], 2)));
+	}
 }
 
 /*
@@ -112,6 +136,7 @@ int main(int argc, char *args[])
 	// float fit_cluster; // Performance metric for aggregation
 	// float fit_orient;  // Performance metric for orientation
 	float fit_localization; //Performance metric for localization
+	get_robots_initial_position();
 	for (;;)
 	{
 		wb_robot_step(TIME_STEP);
@@ -123,7 +148,7 @@ int main(int argc, char *args[])
 			sscanf(inbuffer, "%d#%f#%f", &robot_id, &rob_x, &rob_z);
 			estimated_pose[robot_id][0] = rob_x;
 			estimated_pose[robot_id][1] = rob_z;
-			printf("message receive: %s\n", inbuffer);
+			//printf("message receive: %s\n", inbuffer);
 			//printf("Robot %d estimated pose is: %f %f\n", robot_id, estimated_pose[robot_id][0], estimated_pose[robot_id][1]);
 			count++;
 			wb_receiver_next_packet(receiver);
@@ -134,7 +159,8 @@ int main(int argc, char *args[])
 			loc[i][1] = wb_supervisor_field_get_sf_vec3f(robs_trans[i])[2];		  // Z
 			loc[i][2] = wb_supervisor_field_get_sf_rotation(robs_rotation[i])[3]; // THETA
 		}
-		fit_localization = compute_localization_fitness();
+		compute_localization_fitness(&fit_localization);
+		//printf("fitness for localization is: %f \n", fit_localization);
 		if (t % 10 == 0)
 		{
 			// compute_flocking_fitness(&fit_cluster, &fit_orient);

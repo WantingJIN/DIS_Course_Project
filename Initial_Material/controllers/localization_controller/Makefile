@@ -68,7 +68,9 @@
 ###-----------------------------------------------------------------------------
 
 ### Do not modify: this includes Webots global Makefile.include
-C_SOURCES = localization_controller.c trajectories.c odometry.c kalman_filter.c
+INCLUDE = -I"/usr/local/include"
+LIBRARIES = -L"/path/to/my/library" -lgsl -lgslcblas
+C_SOURCES = localization_controller.c trajectories.c odometry.c kalman_filter.c light_matrix.c
 space :=
 space +=
 WEBOTS_HOME_PATH=$(subst $(space),\ ,$(strip $(subst \,/,$(WEBOTS_HOME))))
