@@ -50,46 +50,48 @@ void kalman_filter_compute_pose(state_t *estimate_state, pose_t *gps_pose, doubl
     Mat ACovA_trans = MatMul(&ACov, &A_trans);
     Mat R_T = MatExpd(&R, &_T);
     Mat Cov_new = MatAdd(&ACovA_trans, &R_T);
-    // if (fabs(gps_pose->x - prev_gps_pose.x) > 1e-3 && fabs(gps_pose->y - prev_gps_pose.y) > 1e-3)
-    // {
-    //     float meas_value[] = {gps_pose->x, gps_pose->y};
-    //     MatSetVal(&meas, meas_value);
-    //     //     // K = Cov_new * C' * inv(C * Cov_new * C' + Q)
-    //     Mat C_trans = MatTrans(&C);
-    //     Mat inter1 = MatMul(&C, &Cov_new);
-    //     Mat inter2 = MatMul(&inter1, &C_trans);
-    //     Mat inter3 = MatAdd(&inter2, &Q);
-    //     Mat inter4 = MatInv(&inter3);
-    //     Mat inter5 = MatMul(&Cov_new, &C_trans);
-    //     Mat K = MatMul(&inter5, &inter4);
-    //     // X_new = X_new + K * (z - C * X_new)
-    //     Mat inter6 = MatMul(&C, &X_new);
-    //     Mat inter7 = MatSub(&meas, &inter6);
-    //     Mat inter8 = MatMul(&K, &inter7);
-    //     Mat X_update = MatAdd(&X_new, &inter8);
-    //     MatCopy(&X_update, &X_new);
-    //     // Cov_new = (I - K * C) * Cov_new
-    //     Mat inter9 = MatMul(&K, &C);
-    //     Mat inter10 = MatSub(&I, &inter9);
-    //     Mat Cov_update = MatMul(&inter10, &Cov_new);
-    //     MatCopy(&Cov_update, &Cov_new);
+    if (fabs(gps_pose->x - prev_gps_pose.x) > 1e-3 || fabs(gps_pose->y - prev_gps_pose.y) > 1e-3)
+    {
+        float meas_value[] = {gps_pose->x, gps_pose->y};
+        MatSetVal(&meas, meas_value);
+        printf("Update pose with gps data!!!\n");
+        printf("gps_pose is: %f %f \n", -2.9 + gps_pose->x, gps_pose->y);
+        //     // K = Cov_new * C' * inv(C * Cov_new * C' + Q)
+        Mat C_trans = MatTrans(&C);
+        Mat inter1 = MatMul(&C, &Cov_new);
+        Mat inter2 = MatMul(&inter1, &C_trans);
+        Mat inter3 = MatAdd(&inter2, &Q);
+        Mat inter4 = MatInv(&inter3);
+        Mat inter5 = MatMul(&Cov_new, &C_trans);
+        Mat K = MatMul(&inter5, &inter4);
+        // X_new = X_new + K * (z - C * X_new)
+        Mat inter6 = MatMul(&C, &X_new);
+        Mat inter7 = MatSub(&meas, &inter6);
+        Mat inter8 = MatMul(&K, &inter7);
+        Mat X_update = MatAdd(&X_new, &inter8);
+        MatCopy(&X_update, &X_new);
+        // Cov_new = (I - K * C) * Cov_new
+        Mat inter9 = MatMul(&K, &C);
+        Mat inter10 = MatSub(&I, &inter9);
+        Mat Cov_update = MatMul(&inter10, &Cov_new);
+        MatCopy(&Cov_update, &Cov_new);
 
-    //     memcpy(&prev_gps_pose, gps_pose, sizeof(pose_t));
-    //     MatDelete(&C_trans);
-    //     MatDelete(&inter1);
-    //     MatDelete(&inter2);
-    //     MatDelete(&inter3);
-    //     MatDelete(&inter4);
-    //     MatDelete(&inter5);
-    //     MatDelete(&K);
-    //     MatDelete(&inter6);
-    //     MatDelete(&inter7);
-    //     MatDelete(&inter8);
-    //     MatDelete(&X_update);
-    //     MatDelete(&inter9);
-    //     MatDelete(&inter10);
-    //     MatDelete(&Cov_update);
-    // }
+        memcpy(&prev_gps_pose, gps_pose, sizeof(pose_t));
+        MatDelete(&C_trans);
+        MatDelete(&inter1);
+        MatDelete(&inter2);
+        MatDelete(&inter3);
+        MatDelete(&inter4);
+        MatDelete(&inter5);
+        MatDelete(&K);
+        MatDelete(&inter6);
+        MatDelete(&inter7);
+        MatDelete(&inter8);
+        MatDelete(&X_update);
+        MatDelete(&inter9);
+        MatDelete(&inter10);
+        MatDelete(&Cov_update);
+    }
     estimate_state->x = X_new.element[0][0];
     estimate_state->y = X_new.element[1][0];
     estimate_state->theta = X_new.element[2][0];
@@ -123,9 +125,9 @@ void kalman_filter_reset(int time_step)
     MatCreate(&u, 2, 1);
     MatCreate(&meas, 2, 1);
     float R_value[] = {
-        0.05, 0.0, 0.0, 0.0, 0.0, 0.0,
-        0.0, 0.05, 0.0, 0.0, 0.0, 0.0,
-        0.0, 0.0, 0.05, 0.0, 0.0, 0.0,
+        0.01, 0.0, 0.0, 0.0, 0.0, 0.0,
+        0.0, 0.01, 0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.01, 0.0, 0.0, 0.0,
         0.0, 0.0, 0.0, 0.01, 0.0, 0.0,
         0.0, 0.0, 0.0, 0.0, 0.01, 0.0,
         0.0, 0.0, 0.0, 0.0, 0.0, 0.01};

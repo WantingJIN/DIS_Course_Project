@@ -53,7 +53,7 @@ void odo_compute_acc_encoders(pose_t *odo, const double acc[3], const double acc
 	_odo_pose_acc.heading = _odo_pose_acc.heading + omega * _T;
 
 	memcpy(odo, &_odo_pose_acc, sizeof(pose_t));
-	printf("ODO with acceleration : %g %g %g\n", -2.9 + odo->x, odo->y, odo->heading);
+	//printf("ODO with acceleration : %g %g %g\n", -2.9 + odo->x, odo->y, odo->heading);
 }
 
 /**
