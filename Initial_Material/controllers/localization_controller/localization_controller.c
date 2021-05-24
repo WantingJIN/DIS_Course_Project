@@ -192,7 +192,10 @@ void controller_compute_mean_acc()
   }
 
   if (count == (int)(TIME_INIT_ACC / (double)time_step * 1000))
+  {
     printf("Accelerometer initialization Done ! \n");
+    printf("acc_mean is: [0]%f, [1]%f \n", _meas.acc_mean[0], _meas.acc_mean[1]);
+  }
 
   //printf("ROBOT acc mean : %g %g %g\n", _meas.acc_mean[0], _meas.acc_mean[1], _meas.acc_mean[2]);
 }
@@ -220,6 +223,8 @@ int main()
     if (wb_robot_get_time() < TIME_INIT_ACC)
     {
       controller_compute_mean_acc();
+      wb_motor_set_velocity(dev_left_motor, 0.0);
+      wb_motor_set_velocity(dev_right_motor, 0.0);
     }
     else
     {
@@ -239,13 +244,12 @@ int main()
       }
       if (USE_KALMAN_FILTER)
       {
-        kalman_filter_compute_pose(&_kalman_state, &_gps_pose, _meas.acc, _meas.acc_mean);
+        kalman_filter_compute_pose(&_kalman_state, &_gps_pose, _meas.left_enc - _meas.prev_left_enc, _meas.right_enc - _meas.prev_right_enc);
       }
+      // Use one of the two trajectories.
+      trajectory_2(dev_left_motor, dev_right_motor);
+      //    trajectory_2(dev_left_motor, dev_right_motor);
     }
-
-    // Use one of the two trajectories.
-    trajectory_1(dev_left_motor, dev_right_motor);
-    //    trajectory_2(dev_left_motor, dev_right_motor);
 
     // Send the estimated pose to supervisor
 
