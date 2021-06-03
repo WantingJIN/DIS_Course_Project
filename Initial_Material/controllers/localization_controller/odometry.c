@@ -93,9 +93,7 @@ void odo_compute_encoders(pose_t *odo, double Aleft_enc, double Aright_enc)
 
 	memcpy(odo, &_odo_pose_enc, sizeof(pose_t));
 
-	memcpy(odo, &_odo_pose_enc, sizeof(pose_t));
-
-	printf("ODO with wheel encoders : %g %g %g\n", -2.9 + odo->x, odo->y, odo->heading);
+	//printf("ODO with wheel encoders : %g %g %g\n", -2.9 + odo->x, odo->y, odo->heading);
 	//printf("ODO with encorder : speed_x: %g, speed_y: %g\n", speed_wx, speed_wy);
 	//printf("Aleft_enc is: %g, Aright_enc is: %g, speed is: %g\n", Aleft_enc, Aright_enc, speed);
 }
@@ -105,14 +103,16 @@ void odo_compute_encoders(pose_t *odo, double Aleft_enc, double Aright_enc)
  *
  * @param[in]  time_step  The time step used in the simulation in miliseconds
  */
-void odo_reset(int time_step)
+void odo_reset(int time_step, pose_t *pose_origin)
 {
 
 	memset(&_odo_pose_acc, 0, sizeof(pose_t));
+	memcpy(&_odo_pose_acc, pose_origin, sizeof(pose_t));
 
 	memset(&_odo_speed_acc, 0, sizeof(pose_t));
 
 	memset(&_odo_pose_enc, 0, sizeof(pose_t));
+	memcpy(&_odo_pose_enc, pose_origin, sizeof(pose_t));
 
 	_T = time_step / 1000.0;
 }
