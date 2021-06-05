@@ -38,10 +38,10 @@
 #define NB 1		 // Number of neighbors on each side
 #define LWEIGHT 2.0	 // Weight of attraction to personal best
 #define NBWEIGHT 2.0 // Weight of attraction to neighborhood best
-#define VMAX 10.0	 // Maximum velocity particle can attain
+#define VMAX 1.0	 // Maximum velocity particle can attain
 #define MININIT 0.0	 // Lower bound on initialization value
 #define MAXINIT 1.0	 // Upper bound on initialization value
-#define ITS 20		 // Number of iterations to run
+#define ITS 100		 // Number of iterations to run
 //#define DATASIZE 2*(NB_SENSOR+2+1)      // Number of elements in particle (2 Neurons with 8 proximity sensors
 // + 2 recursive/lateral conenctions + 1 bias)
 // defined in pso.h
@@ -66,6 +66,7 @@ WbFieldRef robs_trans[FLOCK_SIZE];	  // Robots translation fields
 WbFieldRef robs_rotation[FLOCK_SIZE]; // Robots rotation fields
 WbDeviceTag receiver;				  //Single recevier
 WbDeviceTag emitter[MAX_ROB];		  //emitter for different robot in case of hetegenous problem
+WbDeviceTag emitter_loc;
 
 float loc[FLOCK_SIZE][3];			 // Location of everybody in the flock
 double initial_loc[FLOCK_SIZE][3];	 // Initial translation of everybody in the flock
@@ -95,6 +96,7 @@ void reset(void)
 		em[7]++;
 	}
 
+	emitter_loc = wb_robot_get_device("emitter_loc");
 	wb_receiver_next_packet(receiver);
 
 	if (receiver == 0)
@@ -158,6 +160,7 @@ void compute_localization_fitness(float *fit_loc)
 /*
  * Compute flocking performance metric.
  */
+
 void compute_flocking_fitness(float *fit_flocking)
 {
 	float fit_dist = 0.0;
@@ -214,6 +217,7 @@ void compute_flocking_fitness(float *fit_flocking)
 void calc_fitness(double weights[ROBOTS][DATASIZE], double fit[ROBOTS], int its, int numRobs)
 {
 	double buffer[255];
+	double loc_buffer[255];
 	int i, j, t;
 	float fit_flocking;
 	printf("enter calculate fitness.\n");
@@ -245,6 +249,9 @@ void calc_fitness(double weights[ROBOTS][DATASIZE], double fit[ROBOTS], int its,
 			loc[i][0] = wb_supervisor_field_get_sf_vec3f(robs_trans[i])[0];		  // X
 			loc[i][1] = wb_supervisor_field_get_sf_vec3f(robs_trans[i])[2];		  // Z
 			loc[i][2] = wb_supervisor_field_get_sf_rotation(robs_rotation[i])[3]; // THETA
+			// Sending positions to the robots, comment the following two lines if you don't want the supervisor sending it
+			sprintf(loc_buffer, "%1d#%f#%f#%f", i, loc[i][0], loc[i][1], loc[i][2]);
+			wb_emitter_send(emitter_loc, loc_buffer, strlen(loc_buffer));
 		}
 		compute_flocking_fitness(&fit_flocking);
 		sum_fitness += fit_flocking;
@@ -325,6 +332,7 @@ int main(int argc, char *args[])
 	{
 		flocking_weights = pso(SWARMSIZE, NB, LWEIGHT, NBWEIGHT, VMAX, MININIT, MAXINIT, ITS, DATASIZE, ROBOTS);
 	}
+
 	// while (1)
 	// 	wb_robot_step(64);
 	// for (;;)

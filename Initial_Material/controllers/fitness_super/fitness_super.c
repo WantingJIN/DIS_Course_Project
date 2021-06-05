@@ -148,7 +148,7 @@ void compute_flocking_fitness(float *fit_flocking)
 
 	fit_vel_towards_goal = fabs(sqrtf(powf(flocking_center[0] - prev_flocking_center[0], 2) + powf(flocking_center[1] - prev_flocking_center[1], 2))) / (Dmax / 1000);
 	*fit_flocking = fit_heading * fit_dist * fit_vel_towards_goal;
-	printf("fitness for flocking is: %f, %f, %f\n", fit_heading, fit_dist, fit_vel_towards_goal);
+	//printf("fitness for flocking is: %f, %f, %f\n", fit_heading, fit_dist, fit_vel_towards_goal);
 	prev_flocking_center[0] = flocking_center[0];
 	prev_flocking_center[1] = flocking_center[1];
 }
@@ -194,11 +194,11 @@ int main(int argc, char *args[])
 		if (recevied_loc_data)
 		{
 			compute_localization_fitness(&fit_localization);
-			printf("fitness for localization is: %f \n", fit_localization);
+			//printf("fitness for localization is: %f \n", fit_localization);
 		}
 
 		compute_flocking_fitness(&fit_flocking);
-		printf("fitness for flocking is: %f \n", fit_flocking);
+		//printf("fitness for flocking is: %f \n", fit_flocking);
 
 		// TODO: set a proper stop condition and calculate the average value of the flocking fitness
 	}

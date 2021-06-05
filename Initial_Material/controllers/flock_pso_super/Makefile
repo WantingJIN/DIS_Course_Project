@@ -1,4 +1,4 @@
-# Copyright 1996-2019 Cyberbotics Ltd.
+# Copyright 1996-2018 Cyberbotics Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -66,9 +66,8 @@
 ### VERBOSE = 1
 ###
 ###-----------------------------------------------------------------------------
-
+C_SOURCES = pso.c flock_pso_super.c
 ### Do not modify: this includes Webots global Makefile.include
-C_SOURCES = flocking_controller.c kalman_filter.c light_matrix.c odometry.c localization.c
 space :=
 space +=
 WEBOTS_HOME_PATH=$(subst $(space),\ ,$(strip $(subst \,/,$(WEBOTS_HOME))))

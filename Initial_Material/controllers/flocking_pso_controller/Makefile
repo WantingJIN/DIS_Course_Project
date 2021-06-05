@@ -68,7 +68,7 @@
 ###-----------------------------------------------------------------------------
 
 ### Do not modify: this includes Webots global Makefile.include
-C_SOURCES = flocking_controller.c kalman_filter.c light_matrix.c odometry.c localization.c
+C_SOURCES = flocking_pso_controller.c 
 space :=
 space +=
 WEBOTS_HOME_PATH=$(subst $(space),\ ,$(strip $(subst \,/,$(WEBOTS_HOME))))

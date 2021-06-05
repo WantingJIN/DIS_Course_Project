@@ -21,9 +21,6 @@
 #include <webots/emitter.h>
 #include <webots/receiver.h>
 
-#include "localization.h"
-//------------------------------------------------------------
-/* Definition */
 #define NB_SENSORS 8  // Number of distance sensors
 #define MIN_SENS 350  // Minimum sensibility value
 #define MAX_SENS 4096 // Maximum sensibility value
@@ -39,28 +36,34 @@
 #define WHEEL_RADIUS 0.0205		// Wheel radius (meters)
 #define DELTA_T 0.064			// Timestep (seconds)
 
+//#define RULE1_THRESHOLD 0.20	// Threshold to activate aggregation rule. d//efault 0.20
+//#define RULE1_WEIGHT (0.6 / 10) // Weight of aggregation rule. default 0.6/10
+
+//#define RULE2_THRESHOLD 0.15	 // Threshold to activate dispersion rule. default 0.15
+//#define RULE2_WEIGHT (0.02 / 10) // Weight of dispersion rule. default 0.02/10
+
+//#define RULE3_WEIGHT (1.0 / 10) // Weight of consistency rule. default 1.0/10
+
+//#define MIGRATION_WEIGHT (0.1 / 10) // Wheight of attraction towards the common goal. default 0.01/10
+
 #define MIGRATORY_URGE 1 // Tells the robots if they should just go forward or move towards a specific migratory direction
 
 #define ABS(x) ((x >= 0) ? (x) : -(x))
 
 #define DATASIZE 5
-#define TIME_INIT_ACC 5 // Time in second
 
-//--------------------------------------------------------------
-/* Device Tag */
 /*Webots 2018b*/
 WbDeviceTag left_motor;	 //handler for left wheel of the robot
 WbDeviceTag right_motor; //handler for the right wheel of the robot
 /*Webots 2018b*/
+
+int e_puck_matrix[16] = {17, 29, 34, 10, 8, -38, -56, -76, -72, -58, -36, 8, 10, 36, 28, 18}; // for obstacle avoidance
+
 WbDeviceTag ds[NB_SENSORS];	   // Handle for the infrared distance sensors
 WbDeviceTag receiver_infrared; // Handle for the receiver node
 WbDeviceTag emitter_infrared;  // Handle for the emitter node
-WbDeviceTag emitter_radio;	   // Handle for the emitter node
-
-//----------------------------------------------------------------
-/* Global Variables*/
-
-int e_puck_matrix[16] = {17, 29, 34, 10, 8, -38, -56, -76, -72, -58, -36, 8, 10, 36, 28, 18}; // for obstacle avoidance
+WbDeviceTag receiver_radio;	   // Handle for the emitter node
+WbDeviceTag receiver_loc;
 
 int robot_id_u, robot_id; // Unique and normalized (between 0 and FLOCK_SIZE-1) robot ID
 
@@ -77,14 +80,19 @@ float initial_position[3];
 int msl, msr; // Wheel speeds
 float theta_robots[FLOCK_SIZE];
 
-float estimate_pose[3];
-
 // Define the threshold and the weighting
 float rule1_weight = 0.06;
-float rule2_thres = 0.06;
-float rule2_weight = 0.001;
+float rule2_thres = 0.15;
+float rule2_weight = 0.002;
 float rule3_weight = 0.1;
-float migration_weight = 0.005;
+float migration_weight = 0.01;
+
+// float rule1_weight = 0.906093;
+// float rule2_weight = 0.41;
+// float rule3_weight = 0.1524;
+
+// float migration_weight = 0.01027;
+// float rule2_thres = 0.086;
 int loop_num = 1000;
 
 /*
@@ -94,7 +102,9 @@ static void reset()
 {
 	wb_robot_init();
 	receiver_infrared = wb_robot_get_device("receiver_infrared");
+	receiver_radio = wb_robot_get_device("receiver_radio");
 	emitter_infrared = wb_robot_get_device("emitter_infrared");
+	receiver_loc = wb_robot_get_device("receiver_loc");
 
 	//get motors
 	left_motor = wb_robot_get_device("left wheel motor");
@@ -115,6 +125,8 @@ static void reset()
 		wb_distance_sensor_enable(ds[i], 64);
 
 	wb_receiver_enable(receiver_infrared, 1);
+	wb_receiver_enable(receiver_radio, 1);
+	wb_receiver_enable(receiver_loc, 5);
 
 	//Reading the robot's name. Pay attention to name specification when adding robots to the simulation!
 	sscanf(robot_name, "epuck%d", &robot_id_u); // read robot id from the robot's name
@@ -126,18 +138,18 @@ static void reset()
 	}
 
 	// hard-code the initial state of robot [0]: x [1]: y [2]:theta
-	initial_position[1] = -2.9;
-	initial_position[2] = -1.57;
+	initial_position[0] = -2.9;
+	initial_position[2] = 0;
 	if (robot_id == 0)
-		initial_position[0] = 0.0;
+		initial_position[1] = 0.0;
 	if (robot_id == 1)
-		initial_position[0] = 0.1;
+		initial_position[1] = 0.1;
 	if (robot_id == 2)
-		initial_position[0] = -0.1;
+		initial_position[1] = -0.1;
 	if (robot_id == 3)
-		initial_position[0] = 0.2;
+		initial_position[1] = 0.2;
 	if (robot_id == 4)
-		initial_position[0] = -0.2;
+		initial_position[1] = -0.2;
 
 	for (i = 0; i < 3; i++)
 	{
@@ -174,8 +186,8 @@ void update_self_motion(int msl, int msr)
 	float dtheta = (dr - dl) / AXLE_LENGTH;
 
 	// Compute deltas in the environment
-	float dx = -du * cosf(theta + 1.57);
-	float dz = du * sinf(theta + 1.57);
+	float dx = -du * cosf(theta);
+	float dz = du * sinf(theta);
 
 	// Update position
 	my_position[0] += dx;
@@ -290,7 +302,7 @@ void reynolds_rules()
 		// }
 		speed[robot_id][j] = cohesion[j] * rule1_weight;
 		speed[robot_id][j] += dispersion[j] * rule2_weight;
-		// speed[robot_id][j] += consistency[j] * rule3_weight;
+		speed[robot_id][j] += consistency[j] * rule3_weight;
 	}
 	speed[robot_id][1] *= -1; //y axis of webots is inverted
 
@@ -322,6 +334,28 @@ void send_ping(void)
 	char out[10];
 	strcpy(out, robot_name); // in the ping message we send the name of the robot.
 	wb_emitter_send(emitter_infrared, out, strlen(out) + 1);
+}
+
+void process_localization_messages(void)
+{
+	char *inbuffer;
+	int count = 0;
+	int rob_nb;
+	float rob_x, rob_z, rob_theta;
+	while (wb_receiver_get_queue_length(receiver_loc) > 0 && count < FLOCK_SIZE)
+	{
+		inbuffer = (char *)wb_receiver_get_data(receiver_loc);
+		sscanf(inbuffer, "%d#%f#%f#%f", &rob_nb, &rob_x, &rob_z, &rob_theta);
+		//printf("Recevied message is %s\n", inbuffer);
+		if (rob_nb == robot_id)
+		{
+			my_position[0] = rob_x;
+			my_position[1] = rob_z;
+			my_position[2] = rob_theta;
+		}
+		count++;
+		wb_receiver_next_packet(receiver_loc);
+	}
 }
 
 /*
@@ -377,6 +411,44 @@ void process_received_ping_messages(void)
 	}
 }
 
+void process_received_weightings_from_supervisor()
+{
+	double *rbuffer;
+	if (wb_receiver_get_queue_length(receiver_radio) > 0)
+	{
+		rbuffer = (double *)wb_receiver_get_data(receiver_radio);
+		printf("Robot id: %d, Received weightings from supervisor and reset the postion for the motor\n", robot_id);
+		int i, j;
+		for (i = 0; i < FLOCK_SIZE; i++)
+		{
+			for (j = 0; j < 3; j++)
+			{
+				prev_relative_pos[i][j] = 0.0;
+				relative_pos[i][j] = 0.0;
+			}
+		}
+		for (i = 0; i < 3; i++)
+		{
+			for (j = 0; j < 2; j++)
+			{
+				speed[i][j] = 0.0;
+				relative_speed[i][j] = 0.0;
+			}
+			prev_my_position[i] = 0.0;
+			my_position[i] = initial_position[i];
+		}
+
+		rule1_weight = rbuffer[0];
+		rule2_weight = rbuffer[1] / 10;
+		rule3_weight = rbuffer[2] / 10;
+		migration_weight = rbuffer[3] / 100;
+		rule2_thres = rbuffer[4];
+		loop_num = rbuffer[5];
+		printf("weight: rule1 %f, rule2 %f, rule3 %f, migration %f, rule2_thres %f\n", rule1_weight, rule2_weight, rule3_weight, migration_weight, rule2_thres);
+		wb_receiver_next_packet(receiver_radio);
+	}
+}
+
 // the main function
 int main()
 {
@@ -389,29 +461,21 @@ int main()
 	int max_sens;				 // Store highest sensor value
 
 	reset(); // Resetting the robot
-	localization_init(TIME_STEP);
 
 	for (;;)
 	{
-		wb_receiver_enable(receiver_infrared, 1);
-
-		if (wb_robot_get_time() < TIME_INIT_ACC)
+		while (wb_receiver_get_queue_length(receiver_radio) == 0)
 		{
-			controller_get_acc();
-			controller_compute_mean_acc();
-			wb_motor_set_velocity(left_motor, 0.0);
-			wb_motor_set_velocity(right_motor, 0.0);
+			wb_motor_set_velocity(left_motor, 0);
+			wb_motor_set_velocity(right_motor, 0);
 			wb_robot_step(TIME_STEP);
-			continue;
 		}
+		process_received_weightings_from_supervisor();
+		wb_receiver_enable(receiver_infrared, 1);
 
 		/* Braitenberg */
 		for (t = 0; t < loop_num; t++)
 		{
-			controller_get_pose();
-			controller_get_acc();
-			controller_get_encoder();
-
 			bmsl = 0;
 			bmsr = 0;
 			sum_sensors = 0;
@@ -441,23 +505,11 @@ int main()
 			prev_my_position[0] = my_position[0];
 			prev_my_position[1] = my_position[1];
 
-			//localization by using different localization method
-			estimate_self_position(my_position, 3);
-			my_position[2] = my_position[2] - 1.57;
-			//my_position[1] = -my_position[1];
-			if (my_position[2] > 2 * M_PI)
-				my_position[2] -= 2.0 * M_PI;
-			if (my_position[2] < 0)
-				my_position[2] += 2.0 * M_PI;
-
 			//update_self_motion(msl, msr);
-			if (robot_id == 0)
-			{
-				printf("flocking estimate pos is: %f, %f, %f \n", estimate_pose[0], estimate_pose[1], estimate_pose[2]);
-				printf("flocking update self motion is: %f, %f, %f\n", my_position[0], my_position[1], my_position[2]);
-			}
 
 			process_received_ping_messages();
+
+			process_localization_messages();
 
 			speed[robot_id][0] = (1 / DELTA_T) * (my_position[0] - prev_my_position[0]);
 			speed[robot_id][1] = (1 / DELTA_T) * (my_position[1] - prev_my_position[1]);

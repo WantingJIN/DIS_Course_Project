@@ -11,7 +11,7 @@
 
 #define DATASIZE 5
 //#define SWARMSIZE 10
-#define SWARMSIZE 6
+#define SWARMSIZE 50
 
 // Functions
 double *pso(int, int, double, double, double, double, double, int, int, int);                    // Run particle swarm optimization

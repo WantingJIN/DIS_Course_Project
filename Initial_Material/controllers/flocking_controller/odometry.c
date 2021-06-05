@@ -8,7 +8,7 @@
 //-----------------------------------------------------------------------------------//
 /*CONSTANTES*/
 #define WHEEL_AXIS 0.057	// Distance between the two wheels in meter
-#define WHEEL_RADIUS 0.0205 // Radius of the wheel in meter
+#define WHEEL_RADIUS 0.0200 // Radius of the wheel in meter
 
 /*VERBOSE_FLAGS*/
 #define VERBOSE_ODO_ENC true // Print odometry values computed with wheel encoders
