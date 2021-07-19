@@ -87,12 +87,6 @@ float rule2_weight = 0.002;
 float rule3_weight = 0.1;
 float migration_weight = 0.01;
 
-// float rule1_weight = 0.906093;
-// float rule2_weight = 0.41;
-// float rule3_weight = 0.1524;
-
-// float migration_weight = 0.01027;
-// float rule2_thres = 0.086;
 int loop_num = 1000;
 
 /*
@@ -350,7 +344,7 @@ void process_localization_messages(void)
 		if (rob_nb == robot_id)
 		{
 			my_position[0] = rob_x;
-			my_position[1] = rob_z;
+			my_position[1] = -rob_z;
 			my_position[2] = rob_theta;
 		}
 		count++;
@@ -414,6 +408,10 @@ void process_received_ping_messages(void)
 void process_received_weightings_from_supervisor()
 {
 	double *rbuffer;
+	msl = 0;
+	msr = 0;
+	wb_motor_set_position(left_motor, INFINITY);
+	wb_motor_set_position(right_motor, INFINITY);
 	if (wb_receiver_get_queue_length(receiver_radio) > 0)
 	{
 		rbuffer = (double *)wb_receiver_get_data(receiver_radio);
@@ -438,12 +436,12 @@ void process_received_weightings_from_supervisor()
 			my_position[i] = initial_position[i];
 		}
 
-		rule1_weight = rbuffer[0];
+		rule1_weight = rbuffer[0] / 10;
 		rule2_weight = rbuffer[1] / 10;
-		rule3_weight = rbuffer[2] / 10;
-		migration_weight = rbuffer[3] / 100;
-		rule2_thres = rbuffer[4];
-		loop_num = rbuffer[5];
+		//rule3_weight = rbuffer[2] / 10;
+		//migration_weight = rbuffer[2] / 100;
+		rule2_thres = rbuffer[2];
+		loop_num = rbuffer[3];
 		printf("weight: rule1 %f, rule2 %f, rule3 %f, migration %f, rule2_thres %f\n", rule1_weight, rule2_weight, rule3_weight, migration_weight, rule2_thres);
 		wb_receiver_next_packet(receiver_radio);
 	}

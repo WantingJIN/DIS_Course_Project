@@ -194,10 +194,10 @@ int main(int argc, char *args[])
 		if (recevied_loc_data)
 		{
 			compute_localization_fitness(&fit_localization);
-			//printf("fitness for localization is: %f \n", fit_localization);
+			printf("fitness for localization is: %f \n", fit_localization);
 		}
 
-		compute_flocking_fitness(&fit_flocking);
+		//compute_flocking_fitness(&fit_flocking);
 		//printf("fitness for flocking is: %f \n", fit_flocking);
 
 		// TODO: set a proper stop condition and calculate the average value of the flocking fitness

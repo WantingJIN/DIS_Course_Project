@@ -29,7 +29,9 @@
 #define ROBOTS 1
 #define MAX_ROB 1
 #define ROB_RAD 0.035
-#define ARENA_SIZE 0.94
+#define ARENA_LENGTH 5.8
+#define ARENA_WIDTH 3.5
+#define BRICK_NUM 10
 
 //#define NB_SENSOR 8                     // Number of proximity sensors
 
@@ -38,7 +40,7 @@
 #define NB 1		 // Number of neighbors on each side
 #define LWEIGHT 2.0	 // Weight of attraction to personal best
 #define NBWEIGHT 2.0 // Weight of attraction to neighborhood best
-#define VMAX 1.0	 // Maximum velocity particle can attain
+#define VMAX 0.5	 // Maximum velocity particle can attain
 #define MININIT 0.0	 // Lower bound on initialization value
 #define MAXINIT 1.0	 // Upper bound on initialization value
 #define ITS 100		 // Number of iterations to run
@@ -53,7 +55,7 @@
 #define FIXEDRAD_NB 2
 
 /* Fitness definitions */
-#define FIT_ITS 500 // Number of fitness steps to run during optimization
+#define FIT_ITS 1800 // Number of fitness steps to run during optimization
 
 #define FINALRUNS 10
 #define NEIGHBORHOOD STANDARD
@@ -61,9 +63,11 @@
 
 //----------------------------------------------------------
 /*GLOBAL VARIABLE*/
-WbNodeRef robs[FLOCK_SIZE];			  // Robots nodes
+WbNodeRef robs[FLOCK_SIZE]; // Robots nodes
+WbNodeRef bricks[BRICK_NUM];
 WbFieldRef robs_trans[FLOCK_SIZE];	  // Robots translation fields
 WbFieldRef robs_rotation[FLOCK_SIZE]; // Robots rotation fields
+WbFieldRef bricks_trans[BRICK_NUM];	  // Robots translation fields
 WbDeviceTag receiver;				  //Single recevier
 WbDeviceTag emitter[MAX_ROB];		  //emitter for different robot in case of hetegenous problem
 WbDeviceTag emitter_loc;
@@ -110,6 +114,13 @@ void reset(void)
 		robs[i] = wb_supervisor_node_get_from_def(rob);
 		robs_trans[i] = wb_supervisor_node_get_field(robs[i], "translation");
 		robs_rotation[i] = wb_supervisor_node_get_field(robs[i], "rotation");
+	}
+	char bri[7] = "brick0";
+	for (i = 0; i < BRICK_NUM; i++)
+	{
+		sprintf(bri, "brick%d", i);
+		bricks[i] = wb_supervisor_node_get_from_def(bri);
+		bricks_trans[i] = wb_supervisor_node_get_field(bricks[i], "translation");
 	}
 	// Load robot field for single robot
 	//sprintf(rob, "ROBOT%d", 1);
@@ -217,7 +228,7 @@ void compute_flocking_fitness(float *fit_flocking)
 void calc_fitness(double weights[ROBOTS][DATASIZE], double fit[ROBOTS], int its, int numRobs)
 {
 	double buffer[255];
-	double loc_buffer[255];
+	char loc_buffer[255];
 	int i, j, t;
 	float fit_flocking;
 	printf("enter calculate fitness.\n");
@@ -229,6 +240,16 @@ void calc_fitness(double weights[ROBOTS][DATASIZE], double fit[ROBOTS], int its,
 		wb_supervisor_field_set_sf_vec3f(wb_supervisor_node_get_field(robs[i], "translation"), initial_loc[i]);
 		wb_supervisor_field_set_sf_rotation(wb_supervisor_node_get_field(robs[i], "rotation"), initial_rot[i]);
 		wb_supervisor_node_set_velocity(robs[i], zero_velocity);
+	}
+
+	/* Randomlize the position of bricks */
+	double new_brick_pos[3];
+	for (i = 0; i < BRICK_NUM; i++)
+	{
+		new_brick_pos[0] = ARENA_LENGTH * rnd() - ARENA_LENGTH / 2;
+		new_brick_pos[1] = 0.0;
+		new_brick_pos[2] = ARENA_WIDTH * rnd() - ARENA_WIDTH / 2;
+		wb_supervisor_field_set_sf_vec3f(wb_supervisor_node_get_field(bricks[i], "translation"), new_brick_pos);
 	}
 	/* Send data to robots */
 	for (i = 0; i < numRobs; i++)
@@ -321,52 +342,69 @@ int main(int argc, char *args[])
 	printf("Particle Swarm Optimization Super Controller\n");
 	reset();
 
-	int i;
-	reset();
+	double buffer[255]; // Buffer for emitter
+	int i, j, k;		// Counter variables
 	// float fit_flocking;
 	// float fit_localization; //Performance metric for localization
 	// bool recevied_loc_data = false;
 	get_initial_flocking_center();
 
+	double fit;					 // Fitness of the current FINALRUN
+	double endfit;				 // Best fitness over 10 runs
+	double w[MAX_ROB][DATASIZE]; // Weights to be send to robots (determined by pso() )
+	double f[MAX_ROB];			 // Evaluated fitness (modified by calc_fitness() )
+	double bestfit, bestw[DATASIZE];
+
+	/* Evolve controllers */
+	endfit = 0.0;
+	bestfit = 0.0;
+
 	for (i = 0; i < 10; i++)
 	{
 		flocking_weights = pso(SWARMSIZE, NB, LWEIGHT, NBWEIGHT, VMAX, MININIT, MAXINIT, ITS, DATASIZE, ROBOTS);
+		fit = 0.0;
+		for (i = 0; i < MAX_ROB; i++)
+		{
+			for (k = 0; k < DATASIZE; k++)
+				w[i][k] = flocking_weights[k];
+		}
+
+		// Run FINALRUN tests and calculate average
+
+		calc_fitness(w, f, FIT_ITS, MAX_ROB);
+
+		fit /= f[0];
+		// Check for new best fitness
+		if (fit > bestfit)
+		{
+			bestfit = fit;
+			for (i = 0; i < DATASIZE; i++)
+			{
+				bestw[i] = flocking_weights[i];
+			}
+		}
+
+		printf("Performance of the best solution: %.3f\n", fit);
+		endfit += fit / 10; // average over the 10 runs
+	}
+	printf("~~~~~~~~ Optimization finished.\n");
+	printf("Best performance: %.3f\n", bestfit);
+	printf("Average performance: %.3f\n", endfit);
+
+	/* Send best controller to robots */
+	for (j = 0; j < DATASIZE; j++)
+	{
+		buffer[j] = bestw[j];
+	}
+	buffer[DATASIZE] = 1000000;
+	for (i = 0; i < ROBOTS; i++)
+	{
+		wb_emitter_send(emitter[i], (void *)buffer, (DATASIZE + 1) * sizeof(double));
 	}
 
-	// while (1)
-	// 	wb_robot_step(64);
-	// for (;;)
-	// {
-	// 	wb_robot_step(TIME_STEP);
+	/* Wait forever */
+	while (1)
+		wb_robot_step(64);
 
-	// 	while (wb_receiver_get_queue_length(receiver) > 0 && count < FLOCK_SIZE)
-	// 	{
-	// 		recevied_loc_data = true;
-	// 		inbuffer = (char *)wb_receiver_get_data(receiver);
-	// 		sscanf(inbuffer, "%d#%f#%f", &robot_id, &rob_x, &rob_z);
-	// 		estimated_pose[robot_id][0] = rob_x;
-	// 		estimated_pose[robot_id][1] = rob_z;
-	// 		//printf("message receive: %s\n", inbuffer);
-	// 		//printf("Robot %d estimated pose is: %f %f\n", robot_id, estimated_pose[robot_id][0], estimated_pose[robot_id][1]);
-	// 		count++;
-	// 		//printf("Recevied message from robot %d: %s\n", robot_id, inbuffer);
-	// 		wb_receiver_next_packet(receiver);
-	// 	}
-	// 	for (i = 0; i < FLOCK_SIZE; i++)
-	// 	{
-	// 		loc[i][0] = wb_supervisor_field_get_sf_vec3f(robs_trans[i])[0];		  // X
-	// 		loc[i][1] = wb_supervisor_field_get_sf_vec3f(robs_trans[i])[2];		  // Z
-	// 		loc[i][2] = wb_supervisor_field_get_sf_rotation(robs_rotation[i])[3]; // THETA
-	// 	}
-	// 	if (recevied_loc_data)
-	// 	{
-	// 		compute_localization_fitness(&fit_localization);
-	// 		printf("fitness for localization is: %f \n", fit_localization);
-	// 	}
-
-	// 	compute_flocking_fitness(&fit_flocking);
-	// 	printf("fitness for flocking is: %f \n", fit_flocking);
-
-	// 	// TODO: set a proper stop condition and calculate the average value of the flocking fitness
-	// }
+	return 0;
 }

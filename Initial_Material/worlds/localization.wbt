@@ -1440,6 +1440,7 @@ DEF ROBOT1 Robot {
       channel 1
     }
     DEF EPUCK_EMITTER Emitter {
+      name "emitter_radio"
     }
     DEF EPUCK_SPEAKER Speaker {
     }

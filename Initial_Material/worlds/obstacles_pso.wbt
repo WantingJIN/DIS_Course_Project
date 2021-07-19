@@ -9,8 +9,8 @@ WorldInfo {
   coordinateSystem "NUE"
 }
 Viewpoint {
-  orientation -0.9931345111565514 -0.11262694456245013 -0.03160718444222321 1.03351
-  position -1.6585415096424505 5.666309726373233 3.637095016590059
+  orientation -0.3847562246980767 0.837634785564949 0.3877249199724529 1.876019925368209
+  position -0.4857663139703664 3.0742170608960517 1.0172722680762123
 }
 PointLight {
   intensity 0.5
@@ -102,6 +102,106 @@ DEF long_rock_3 Solid {
     size 0.6 0.2 0.01
   }
 }
+DEF long_rock_3 Solid {
+  translation -3.06 0.02 -1.10196e-07
+  rotation 0 1 0 1.5708
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 1 1 1
+        }
+        texture ImageTexture {
+          url [
+            "textures/stone-2.png"
+          ]
+        }
+      }
+      geometry Box {
+        size 5 0.5 0.05
+      }
+    }
+  ]
+  name "short brick(1)"
+  boundingObject DEF U_END_BOX Box {
+    size 0.6 0.2 0.01
+  }
+}
+DEF long_rock_3 Solid {
+  translation 7.97151e-06 -0.07 1.84999
+  rotation 0 1 0 -3.1415853071795863
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 1 1 1
+        }
+        texture ImageTexture {
+          url [
+            "textures/stone-2.png"
+          ]
+        }
+      }
+      geometry Box {
+        size 7 0.5 0.05
+      }
+    }
+  ]
+  name "short brick(3)"
+  boundingObject DEF U_END_BOX Box {
+    size 0.6 0.2 0.01
+  }
+}
+DEF long_rock_3 Solid {
+  translation 0.0199876 0.03 -1.85001
+  rotation 0 1 0 -3.1415853071795863
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 1 1 1
+        }
+        texture ImageTexture {
+          url [
+            "textures/stone-2.png"
+          ]
+        }
+      }
+      geometry Box {
+        size 7 0.5 0.05
+      }
+    }
+  ]
+  name "short brick(4)"
+  boundingObject DEF U_END_BOX Box {
+    size 0.6 0.2 0.01
+  }
+}
+DEF long_rock_3 Solid {
+  translation 3.01 -0.05 -2.24048e-05
+  rotation 0 1 0 1.5708
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 1 1 1
+        }
+        texture ImageTexture {
+          url [
+            "textures/stone-2.png"
+          ]
+        }
+      }
+      geometry Box {
+        size 5 0.5 0.05
+      }
+    }
+  ]
+  name "short brick(2)"
+  boundingObject DEF U_END_BOX Box {
+    size 0.6 0.2 0.01
+  }
+}
 DEF long_rock_4 Solid {
   translation -2.9 0 0.3
   children [
@@ -150,7 +250,7 @@ DEF long_rock_6 Solid {
     size 0.2 0.2 0.01
   }
 }
-DEF rock Solid {
+DEF brick0 Solid {
   translation -0.267548 0 -0.22167
   rotation 0 1 0 5.02662
   children [
@@ -170,12 +270,12 @@ DEF rock Solid {
       }
     }
   ]
-  name "short brick"
+  name "brick0"
   boundingObject DEF U_END_BOX Box {
     size 0.15 0.2 0.15
   }
 }
-DEF rock Solid {
+DEF brick1 Solid {
   translation -1.38774 0 -1.06532
   rotation 0 -1 0 2.05704
   children [
@@ -195,12 +295,12 @@ DEF rock Solid {
       }
     }
   ]
-  name "short brick"
+  name "brick1"
   boundingObject DEF U_END_BOX Box {
     size 0.05 0.2 0.05
   }
 }
-DEF rock Solid {
+DEF brick2 Solid {
   translation 1.25364 0 0.47529
   rotation 0 -1 0 2.05704
   children [
@@ -220,12 +320,12 @@ DEF rock Solid {
       }
     }
   ]
-  name "short brick"
+  name "brick3"
   boundingObject DEF U_END_BOX Box {
     size 0.05 0.2 0.05
   }
 }
-DEF rock Solid {
+DEF brick3 Solid {
   translation -1.53541 0 0.16115
   rotation 0 -1 0 2.05704
   children [
@@ -245,12 +345,12 @@ DEF rock Solid {
       }
     }
   ]
-  name "short brick"
+  name "brick4"
   boundingObject DEF U_END_BOX Box {
     size 0.05 0.2 0.05
   }
 }
-DEF rock Solid {
+DEF brick4 Solid {
   translation -1.34035 0 0.776227
   rotation 0 -1 0 2.05704
   children [
@@ -270,12 +370,12 @@ DEF rock Solid {
       }
     }
   ]
-  name "short brick"
+  name "brick5"
   boundingObject DEF U_END_BOX Box {
     size 0.05 0.2 0.05
   }
 }
-DEF rock Solid {
+DEF brick5 Solid {
   translation -2.34293 0 -0.0741107
   rotation 0 -1 0 2.05704
   children [
@@ -295,12 +395,12 @@ DEF rock Solid {
       }
     }
   ]
-  name "short brick"
+  name "brick6"
   boundingObject DEF U_END_BOX Box {
     size 0.05 0.2 0.05
   }
 }
-DEF rock Solid {
+DEF brick6 Solid {
   translation 1.09992 0 -1.32743
   rotation 0 -1 0 2.05704
   children [
@@ -320,12 +420,12 @@ DEF rock Solid {
       }
     }
   ]
-  name "short brick"
+  name "brick7"
   boundingObject DEF U_END_BOX Box {
     size 0.05 0.2 0.05
   }
 }
-DEF rock Solid {
+DEF brick7 Solid {
   translation -0.105938 -1.77636e-15 -1.3463
   children [
     Shape {
@@ -344,12 +444,12 @@ DEF rock Solid {
       }
     }
   ]
-  name "short brick"
+  name "brick8"
   boundingObject DEF U_END_BOX Box {
     size 0.15 0.2 0.15
   }
 }
-DEF rock Solid {
+DEF brick8 Solid {
   translation 0.931062 0 1.31682
   rotation 0 -1 0 0.325642
   children [
@@ -369,12 +469,12 @@ DEF rock Solid {
       }
     }
   ]
-  name "short brick"
+  name "brick9"
   boundingObject DEF U_END_BOX Box {
     size 0.15 0.2 0.15
   }
 }
-DEF rock Solid {
+DEF brick9 Solid {
   translation -0.0855468 0 0.846635
   children [
     Shape {
@@ -393,7 +493,7 @@ DEF rock Solid {
       }
     }
   ]
-  name "short brick"
+  name "brick10"
   boundingObject DEF U_END_BOX Box {
     size 0.15 0.2 0.15
   }
@@ -417,7 +517,7 @@ DEF rock Solid {
       }
     }
   ]
-  name "short brick"
+  name "brick11"
   boundingObject DEF U_END_BOX Box {
     size 0.15 0.2 0.15
   }
@@ -441,7 +541,7 @@ DEF rock Solid {
       }
     }
   ]
-  name "short brick"
+  name "brick12"
   boundingObject DEF U_END_BOX Box {
     size 0.15 0.2 0.15
   }
@@ -465,13 +565,13 @@ DEF rock Solid {
       }
     }
   ]
-  name "short brick"
+  name "brick13"
   boundingObject DEF U_END_BOX Box {
     size 0.15 0.2 0.15
   }
 }
 DEF rock Solid {
-  translation -1.95487 0 -0.686015
+  translation -0.245794 8.88178e-16 -1.42081
   children [
     Shape {
       appearance Appearance {
@@ -489,7 +589,7 @@ DEF rock Solid {
       }
     }
   ]
-  name "short brick"
+  name "brick14"
   boundingObject DEF U_END_BOX Box {
     size 0.15 0.2 0.37
   }
@@ -514,19 +614,43 @@ DEF rock Solid {
       }
     }
   ]
-  name "short brick"
+  name "brick15"
   boundingObject DEF U_END_BOX Box {
     size 0.15 0.2 0.15
   }
 }
 DEF SUPERVISOR Robot {
-  controller ""
+  children [
+    Emitter {
+      name "emitter_loc"
+      channel 4
+    }
+    Emitter {
+      name "emitter0"
+      channel 3
+    }
+    Receiver {
+      channel 1
+    }
+  ]
+  controller "flock_pso_super"
   supervisor TRUE
 }
 DEF epuck0 Robot {
   translation -2.9 0 0
   rotation 3.3485297301176603e-06 0.9999999999887875 -3.348518467756148e-06 -1.5707996939107844
   children [
+    Receiver {
+      name "receiver_loc"
+      channel 4
+    }
+    Receiver {
+      name "receiver_radio"
+      channel 3
+    }
+    Emitter {
+      name "emitter_infrared"
+    }
     GPS {
     }
     HingeJoint {
@@ -1850,9 +1974,10 @@ DEF epuck0 Robot {
       ]
     }
     DEF EPUCK_RECEIVER Receiver {
-      channel 1
+      name "receiver_infrared"
     }
     DEF EPUCK_EMITTER Emitter {
+      name "emitter_radio"
       channel 1
     }
     DEF EPUCK_SPEAKER Speaker {
@@ -1902,13 +2027,24 @@ DEF epuck0 Robot {
       0 0 0
     ]
   }
-  controller "flocking_controller"
+  controller "flocking_pso_controller"
   cpuConsumption 1.11
 }
 DEF epuck1 Robot {
   translation -2.9 0 0.1
   rotation 3.3485297301176603e-06 0.9999999999887875 -3.348518467756148e-06 -1.5707996939107844
   children [
+    Receiver {
+      name "receiver_loc"
+      channel 4
+    }
+    Receiver {
+      name "receiver_radio"
+      channel 3
+    }
+    Emitter {
+      name "emitter_infrared"
+    }
     GPS {
     }
     HingeJoint {
@@ -3232,9 +3368,10 @@ DEF epuck1 Robot {
       ]
     }
     DEF EPUCK_RECEIVER Receiver {
-      channel 1
+      name "receiver_infrared"
     }
     DEF EPUCK_EMITTER Emitter {
+      name "emitter_radio"
       channel 1
     }
     DEF EPUCK_SPEAKER Speaker {
@@ -3284,13 +3421,24 @@ DEF epuck1 Robot {
       0 0 0
     ]
   }
-  controller "flocking_controller"
+  controller "flocking_pso_controller"
   cpuConsumption 1.11
 }
 DEF epuck2 Robot {
   translation -2.9 0 -0.1
   rotation 3.3485297301176603e-06 0.9999999999887875 -3.348518467756148e-06 -1.5707996939107844
   children [
+    Receiver {
+      name "receiver_loc"
+      channel 4
+    }
+    Receiver {
+      name "receiver_radio"
+      channel 3
+    }
+    Emitter {
+      name "emitter_infrared"
+    }
     GPS {
     }
     HingeJoint {
@@ -4614,9 +4762,10 @@ DEF epuck2 Robot {
       ]
     }
     DEF EPUCK_RECEIVER Receiver {
-      channel 1
+      name "receiver_infrared"
     }
     DEF EPUCK_EMITTER Emitter {
+      name "emitter_radio"
       channel 1
     }
     DEF EPUCK_SPEAKER Speaker {
@@ -4666,13 +4815,24 @@ DEF epuck2 Robot {
       0 0 0
     ]
   }
-  controller "flocking_controller"
+  controller "flocking_pso_controller"
   cpuConsumption 1.11
 }
 DEF epuck3 Robot {
   translation -2.9 0 0.2
   rotation 3.3485297301176603e-06 0.9999999999887875 -3.348518467756148e-06 -1.5707996939107844
   children [
+    Receiver {
+      name "receiver_loc"
+      channel 4
+    }
+    Receiver {
+      name "receiver_radio"
+      channel 3
+    }
+    Emitter {
+      name "emitter_infrared"
+    }
     GPS {
     }
     HingeJoint {
@@ -5996,9 +6156,10 @@ DEF epuck3 Robot {
       ]
     }
     DEF EPUCK_RECEIVER Receiver {
-      channel 1
+      name "receiver_infrared"
     }
     DEF EPUCK_EMITTER Emitter {
+      name "emitter_radio"
       channel 1
     }
     DEF EPUCK_SPEAKER Speaker {
@@ -6048,13 +6209,24 @@ DEF epuck3 Robot {
       0 0 0
     ]
   }
-  controller "flocking_controller"
+  controller "flocking_pso_controller"
   cpuConsumption 1.11
 }
 DEF epuck4 Robot {
   translation -2.9 0 -0.2
   rotation 3.3485297301176603e-06 0.9999999999887875 -3.348518467756148e-06 -1.5707996939107844
   children [
+    Receiver {
+      name "receiver_loc"
+      channel 4
+    }
+    Receiver {
+      name "receiver_radio"
+      channel 3
+    }
+    Emitter {
+      name "emitter_infrared"
+    }
     GPS {
     }
     HingeJoint {
@@ -7378,9 +7550,10 @@ DEF epuck4 Robot {
       ]
     }
     DEF EPUCK_RECEIVER Receiver {
-      channel 1
+      name "receiver_infrared"
     }
     DEF EPUCK_EMITTER Emitter {
+      name "emitter_radio"
       channel 1
     }
     DEF EPUCK_SPEAKER Speaker {
@@ -7430,6 +7603,6 @@ DEF epuck4 Robot {
       0 0 0
     ]
   }
-  controller "flocking_controller"
+  controller "flocking_pso_controller"
   cpuConsumption 1.11
 }

@@ -395,19 +395,21 @@ int main()
 	{
 		wb_receiver_enable(receiver_infrared, 1);
 
-		if (wb_robot_get_time() < TIME_INIT_ACC)
-		{
-			controller_get_acc();
-			controller_compute_mean_acc();
-			wb_motor_set_velocity(left_motor, 0.0);
-			wb_motor_set_velocity(right_motor, 0.0);
-			wb_robot_step(TIME_STEP);
-			continue;
-		}
+		// if (wb_robot_get_time() < TIME_INIT_ACC)
+		// {
+		// controller_get_acc();
+		// controller_compute_mean_acc();
+		// wb_motor_set_velocity(left_motor, 0.0);
+		// wb_motor_set_velocity(right_motor, 0.0);
+		// wb_robot_step(TIME_STEP);
+		// continue;
+		// }
 
 		/* Braitenberg */
 		for (t = 0; t < loop_num; t++)
 		{
+			// Continue one step
+			wb_robot_step(TIME_STEP);
 			controller_get_pose();
 			controller_get_acc();
 			controller_get_encoder();
@@ -453,7 +455,7 @@ int main()
 			//update_self_motion(msl, msr);
 			if (robot_id == 0)
 			{
-				printf("flocking estimate pos is: %f, %f, %f \n", estimate_pose[0], estimate_pose[1], estimate_pose[2]);
+				//printf("flocking estimate pos is: %f, %f, %f \n", estimate_pose[0], estimate_pose[1], estimate_pose[2]);
 				printf("flocking update self motion is: %f, %f, %f\n", my_position[0], my_position[1], my_position[2]);
 			}
 
@@ -488,7 +490,7 @@ int main()
 			//printf("msl_w is: %f, msr_w is: %f\n", msl_w, msr_w);
 
 			// Continue one step
-			wb_robot_step(TIME_STEP);
+			//wb_robot_step(TIME_STEP);
 		}
 	}
 }

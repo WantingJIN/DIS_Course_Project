@@ -14,10 +14,12 @@
 
 //----------------------------------------------------------
 /* FLAGS_ENABLE_DIFFERENT LOCALIZATION_METHOD*/
-#define USE_GPS_ONLY false
-#define USE_ENCODER_ONLY true
-#define USE_ACCELEROMETER_ENCODER false
-#define USE_KALMAN_FILTER false
+/* FLAGS_ENABLE_DIFFERENT LOCALIZATION_METHOD*/
+// LOCALIZATION_METHOD 0: localization by only use gps data
+// LOCALIZATION_METHOD 1: localization by using acc + encoder (for heading) odometry
+// LOCALIZATION_METHOD 2: localization by using encoder odometry
+// LOCALIZATION_METHOD 3: localization by using kalman filter
+#define LOCALIZATION_METHOD 3
 //----------------------------------------------------------
 /*DEFINITION*/
 #define TIME_INIT_ACC 5 // Time in second
@@ -109,8 +111,6 @@ void init_localization_devices(int ts)
   sscanf(robot_name, "epuck%d", &robot_id_u); // read robot id from the robot's name
   robot_id = robot_id_u % FLOCK_SIZE;         // normalize between 0 and FLOCK_SIZE-1
   gps_updated = false;
-  printf("robot_id_u is: %d\n", robot_id_u);
-  printf("robot_id is: %d \n", robot_id);
   if (FLOCK_SIZE == 5)
   {
     // covert y axis, set y equal to -y of what get from webot world
@@ -133,7 +133,6 @@ void init_localization_devices(int ts)
       break;
     }
   }
-  printf("robot_id is %d pose_origin is: %f, %f, %f\n", robot_id, _pose_origin.x, _pose_origin.y, _pose_origin.heading);
 }
 
 void controller_get_gps()
@@ -255,42 +254,42 @@ int main()
 
     if (wb_robot_get_time() < TIME_INIT_ACC)
     {
-      controller_compute_mean_acc();
-      wb_motor_set_velocity(dev_left_motor, 0.0);
-      wb_motor_set_velocity(dev_right_motor, 0.0);
+    controller_compute_mean_acc();
+    wb_motor_set_velocity(dev_left_motor, 0.0);
+    wb_motor_set_velocity(dev_right_motor, 0.0);
     }
     else
     {
-      if (USE_GPS_ONLY)
-      {
-        memcpy(&_estimated_pose, &_gps_pose, sizeof(pose_t));
-      }
-      if (USE_ACCELEROMETER_ENCODER)
-      {
-        odo_compute_acc_encoders(&_odo_acc_encoder, _meas.acc, _meas.acc_mean, _meas.left_enc - _meas.prev_left_enc, _meas.right_enc - _meas.prev_right_enc);
-        memcpy(&_estimated_pose, &_odo_acc_encoder, sizeof(pose_t));
-      }
-      if (USE_ENCODER_ONLY)
-      {
-        odo_compute_encoders(&_odo_enc, _meas.left_enc - _meas.prev_left_enc, _meas.right_enc - _meas.prev_right_enc);
-        memcpy(&_estimated_pose, &_odo_enc, sizeof(pose_t));
-      }
-      if (USE_KALMAN_FILTER)
-      {
-        kalman_filter_compute_pose(&_kalman_pose, &_gps_pose, gps_updated, _meas.left_enc - _meas.prev_left_enc, _meas.right_enc - _meas.prev_right_enc);
-        memcpy(&_estimated_pose, &_kalman_pose, sizeof(pose_t));
-      }
-      // Use one of the two trajectories.
-      trajectory_2(dev_left_motor, dev_right_motor);
-      //    trajectory_2(dev_left_motor, dev_right_motor);
-      // Send the estimated pose to supervisor
-
-      sprintf(buffer, "%1d#%f#%f", robot_id, _estimated_pose.x, _estimated_pose.y);
-      //sprintf(buffer, "%1d#%f#%f", 1, 1.2, 1.2);
-      //printf("message sent: %s\n", buffer);
-      wb_emitter_send(radio_emitter, buffer, strlen(buffer));
-      //printf("Robot %d send the message: %s\n", robot_id, buffer);
+    if (LOCALIZATION_METHOD == 0)
+    {
+      memcpy(&_estimated_pose, &_gps_pose, sizeof(pose_t));
     }
+    if (LOCALIZATION_METHOD == 1)
+    {
+      odo_compute_acc_encoders(&_odo_acc_encoder, _meas.acc, _meas.acc_mean, _meas.left_enc - _meas.prev_left_enc, _meas.right_enc - _meas.prev_right_enc);
+      memcpy(&_estimated_pose, &_odo_acc_encoder, sizeof(pose_t));
+    }
+    if (LOCALIZATION_METHOD == 2)
+    {
+      odo_compute_encoders(&_odo_enc, _meas.left_enc - _meas.prev_left_enc, _meas.right_enc - _meas.prev_right_enc);
+      memcpy(&_estimated_pose, &_odo_enc, sizeof(pose_t));
+    }
+    if (LOCALIZATION_METHOD == 3)
+    {
+      kalman_filter_compute_pose(&_kalman_pose, &_gps_pose, gps_updated, _meas.left_enc - _meas.prev_left_enc, _meas.right_enc - _meas.prev_right_enc);
+      memcpy(&_estimated_pose, &_kalman_pose, sizeof(pose_t));
+    }
+    // Use one of the two trajectories.
+    trajectory_2(dev_left_motor, dev_right_motor);
+    //    trajectory_2(dev_left_motor, dev_right_motor);
+    // Send the estimated pose to supervisor
+
+    sprintf(buffer, "%1d#%f#%f", robot_id, _estimated_pose.x, _estimated_pose.y);
+    //sprintf(buffer, "%1d#%f#%f", 1, 1.2, 1.2);
+    //printf("message sent: %s\n", buffer);
+    wb_emitter_send(radio_emitter, buffer, strlen(buffer));
+    //printf("Robot %d send the message: %s\n", robot_id, buffer);
+     }
   }
 
   kalman_filter_cleanup();

@@ -51,19 +51,10 @@ void kalman_filter_compute_pose(pose_t *state_kalman, pose_t *gps_pose, bool gps
     Mat ACovA_trans = MatMul(&ACov, &A_trans);
     Mat R_T = MatExpd(&R, &_T);
     Mat Cov_new = MatAdd(&ACovA_trans, &R_T);
-    if (_robot_id == 2)
-    {
-        printf("Robot 2 predicted pose is: %f, %f, %f\n", x_new, y_new, theta_new);
-    }
     if (gps_updated)
     {
         float meas_value[] = {gps_pose->x, gps_pose->y};
         MatSetVal(&meas, meas_value);
-        if (_robot_id == 2)
-        {
-            printf("Update pose with gps data!!!\n");
-            printf("gps_pose is: %f %f \n", gps_pose->x, gps_pose->y);
-        }
         //     // K = Cov_new * C' * inv(C * Cov_new * C' + Q)
         Mat C_trans = MatTrans(&C);
         Mat inter1 = MatMul(&C, &Cov_new);
@@ -78,10 +69,6 @@ void kalman_filter_compute_pose(pose_t *state_kalman, pose_t *gps_pose, bool gps
         Mat inter8 = MatMul(&K, &inter7);
         Mat X_update = MatAdd(&X_new, &inter8);
         MatCopy(&X_update, &X_new);
-        if (_robot_id == 2)
-        {
-            printf("Robot 2 updated pose is: %f, %f, %f\n", X_update.element[0][0], X_update.element[1][0], X_update.element[2][0]);
-        }
         // Cov_new = (I - K * C) * Cov_new
         Mat inter9 = MatMul(&K, &C);
         Mat inter10 = MatSub(&I, &inter9);
